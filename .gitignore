@@ -1,0 +1,10 @@
+target/
+node_modules/
+src/main/frontend/dist/
+src/main/frontend/node/
+src/main/webapp/assets/
+src/main/webapp/index.html
+*.class
+*.jar
+*.war
+.DS_Store
