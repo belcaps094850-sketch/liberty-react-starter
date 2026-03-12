@@ -7,6 +7,9 @@
         <feature>mpConfig-3.1</feature>
         <feature>mpHealth-4.0</feature>
         <feature>mpOpenAPI-3.1</feature>
+        <feature>persistence-3.1</feature>
+        <feature>beanValidation-3.0</feature>
+        <feature>enterpriseBeansLite-4.0</feature>
     </featureManager>
 
     <httpEndpoint id="defaultHttpEndpoint"
@@ -16,6 +19,30 @@
 
     <webApplication location="liberty-react-starter.war"
                     contextRoot="${app.context.root}" />
+
+    <!-- ========== Derby (embedded, for development) ========== -->
+    <library id="derbyLib">
+        <fileset dir="${server.config.dir}/derby" includes="*.jar" />
+    </library>
+
+    <dataSource id="DefaultDataSource" jndiName="jdbc/claimsDB">
+        <jdbcDriver libraryRef="derbyLib" />
+        <properties.derby.embedded databaseName="${server.output.dir}/data/claimsDB" createDatabase="create" />
+    </dataSource>
+
+    <!-- ========== PostgreSQL (uncomment for production) ========== -->
+    <!--
+    <library id="postgresLib">
+        <fileset dir="${server.config.dir}/postgres" includes="*.jar" />
+    </library>
+
+    <dataSource id="DefaultDataSource" jndiName="jdbc/claimsDB">
+        <jdbcDriver libraryRef="postgresLib" />
+        <properties.postgresql serverName="localhost" portNumber="5432"
+                               databaseName="claimsdb"
+                               user="postgres" password="postgres" />
+    </dataSource>
+    -->
 
     <!-- Allow CORS during development (React dev server on port 5173) -->
     <cors domain="/"

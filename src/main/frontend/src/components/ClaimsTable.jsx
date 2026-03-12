@@ -20,7 +20,7 @@ export default function ClaimsTable({ claims, onDelete }) {
     <table>
       <thead>
         <tr>
-          <th>ID</th>
+          <th>Claim #</th>
           <th>Claimant</th>
           <th>Type</th>
           <th>Status</th>
@@ -33,7 +33,7 @@ export default function ClaimsTable({ claims, onDelete }) {
       <tbody>
         {claims.map((claim) => (
           <tr key={claim.id}>
-            <td><strong>{claim.id}</strong></td>
+            <td><strong>{claim.claimNumber}</strong></td>
             <td>{claim.claimant}</td>
             <td>{claim.type}</td>
             <td>

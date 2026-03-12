@@ -10,8 +10,8 @@
     <packaging>war</packaging>
 
     <properties>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <liberty.var.default.http.port>9080</liberty.var.default.http.port>
         <liberty.var.default.https.port>9443</liberty.var.default.https.port>
@@ -36,6 +36,20 @@
             <version>6.1</version>
             <type>pom</type>
             <scope>provided</scope>
+        </dependency>
+
+        <!-- Derby (embedded DB for development) -->
+        <dependency>
+            <groupId>org.apache.derby</groupId>
+            <artifactId>derby</artifactId>
+            <version>10.16.1.1</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.derby</groupId>
+            <artifactId>derbytools</artifactId>
+            <version>10.16.1.1</version>
+            <scope>runtime</scope>
         </dependency>
 
         <!-- Testing -->
@@ -121,7 +135,43 @@
                 <version>3.4.0</version>
             </plugin>
 
-            <!-- 4. Open Liberty plugin -->
+            <!-- 4. Copy Derby JARs to Liberty server config -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>3.6.1</version>
+                <executions>
+                    <execution>
+                        <id>copy-derby-jars</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>copy</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>org.apache.derby</groupId>
+                                    <artifactId>derby</artifactId>
+                                    <version>10.16.1.1</version>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>org.apache.derby</groupId>
+                                    <artifactId>derbytools</artifactId>
+                                    <version>10.16.1.1</version>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>org.apache.derby</groupId>
+                                    <artifactId>derbyshared</artifactId>
+                                    <version>10.16.1.1</version>
+                                </artifactItem>
+                            </artifactItems>
+                            <outputDirectory>${project.build.directory}/liberty/wlp/usr/servers/defaultServer/derby</outputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- 5. Open Liberty plugin -->
             <plugin>
                 <groupId>io.openliberty.tools</groupId>
                 <artifactId>liberty-maven-plugin</artifactId>

@@ -1,35 +1,51 @@
 package com.example.model;
 
-import jakarta.json.bind.annotation.JsonbProperty;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 
+@Entity
+@Table(name = "claims")
+@NamedQuery(name = "Claim.findAll", query = "SELECT c FROM Claim c ORDER BY c.dateSubmitted DESC")
+@NamedQuery(name = "Claim.countAll", query = "SELECT COUNT(c) FROM Claim c")
 public class Claim {
 
-    @JsonbProperty("id")
-    private String id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-    @JsonbProperty("claimant")
+    @Column(name = "claim_number", unique = true, nullable = false)
+    private String claimNumber;
+
+    @NotBlank
+    @Column(nullable = false)
     private String claimant;
 
-    @JsonbProperty("type")
+    @NotBlank
+    @Column(nullable = false)
     private String type;
 
-    @JsonbProperty("status")
+    @NotBlank
+    @Column(nullable = false)
     private String status;
 
-    @JsonbProperty("amount")
-    private double amount;
+    @NotNull
+    @Positive
+    @Column(nullable = false)
+    private Double amount;
 
-    @JsonbProperty("dateSubmitted")
+    @Column(name = "date_submitted")
     private String dateSubmitted;
 
-    @JsonbProperty("description")
+    @Column(length = 500)
     private String description;
 
     public Claim() {}
 
-    public Claim(String id, String claimant, String type, String status,
-                 double amount, String dateSubmitted, String description) {
-        this.id = id;
+    public Claim(String claimNumber, String claimant, String type, String status,
+                 Double amount, String dateSubmitted, String description) {
+        this.claimNumber = claimNumber;
         this.claimant = claimant;
         this.type = type;
         this.status = status;
@@ -39,8 +55,11 @@ public class Claim {
     }
 
     // Getters and setters
-    public String getId() { return id; }
-    public void setId(String id) { this.id = id; }
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+
+    public String getClaimNumber() { return claimNumber; }
+    public void setClaimNumber(String claimNumber) { this.claimNumber = claimNumber; }
 
     public String getClaimant() { return claimant; }
     public void setClaimant(String claimant) { this.claimant = claimant; }
@@ -51,8 +70,8 @@ public class Claim {
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
 
-    public double getAmount() { return amount; }
-    public void setAmount(double amount) { this.amount = amount; }
+    public Double getAmount() { return amount; }
+    public void setAmount(Double amount) { this.amount = amount; }
 
     public String getDateSubmitted() { return dateSubmitted; }
     public void setDateSubmitted(String dateSubmitted) { this.dateSubmitted = dateSubmitted; }

@@ -1,12 +1,13 @@
 package com.example.rest;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 import com.example.model.Claim;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.transaction.Transactional;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -17,38 +18,35 @@ import jakarta.ws.rs.core.Response;
 @Consumes(MediaType.APPLICATION_JSON)
 public class ClaimResource {
 
-    private final List<Claim> claims = new ArrayList<>(List.of(
-        new Claim("CLM-001", "Jane Doe", "Medical",
-                  "Pending", 2500.00, "2026-03-01",
-                  "Emergency room visit - ankle injury"),
-        new Claim("CLM-002", "John Smith", "Dental",
-                  "Approved", 850.00, "2026-02-28",
-                  "Root canal procedure"),
-        new Claim("CLM-003", "Maria Garcia", "Vision",
-                  "Under Review", 320.00, "2026-03-05",
-                  "Annual eye exam and new prescription lenses"),
-        new Claim("CLM-004", "Robert Johnson", "Short-Term Disability",
-                  "Denied", 4200.00, "2026-02-15",
-                  "Work-related back injury - 6 week recovery"),
-        new Claim("CLM-005", "Sarah Williams", "Medical",
-                  "Approved", 1100.00, "2026-03-10",
-                  "Physical therapy - 4 sessions")
-    ));
+    @PersistenceContext(unitName = "claims-pu")
+    private EntityManager em;
 
     @GET
     public List<Claim> getAllClaims() {
-        return claims;
+        return em.createNamedQuery("Claim.findAll", Claim.class).getResultList();
     }
 
     @GET
     @Path("/{id}")
-    public Response getClaimById(@PathParam("id") String id) {
-        Optional<Claim> claim = claims.stream()
-                .filter(c -> c.getId().equals(id))
-                .findFirst();
+    public Response getClaimById(@PathParam("id") Long id) {
+        Claim claim = em.find(Claim.class, id);
+        if (claim != null) {
+            return Response.ok(claim).build();
+        }
+        return Response.status(Response.Status.NOT_FOUND)
+                .entity("{\"error\": \"Claim not found\"}")
+                .build();
+    }
 
-        if (claim.isPresent()) {
-            return Response.ok(claim.get()).build();
+    @GET
+    @Path("/number/{claimNumber}")
+    public Response getClaimByNumber(@PathParam("claimNumber") String claimNumber) {
+        List<Claim> results = em.createQuery(
+                "SELECT c FROM Claim c WHERE c.claimNumber = :num", Claim.class)
+                .setParameter("num", claimNumber)
+                .getResultList();
+        if (!results.isEmpty()) {
+            return Response.ok(results.get(0)).build();
         }
         return Response.status(Response.Status.NOT_FOUND)
                 .entity("{\"error\": \"Claim not found\"}")
@@ -56,36 +54,46 @@ public class ClaimResource {
     }
 
     @POST
+    @Transactional
     public Response createClaim(Claim claim) {
-        claim.setId("CLM-" + String.format("%03d", claims.size() + 1));
-        claims.add(claim);
+        // Auto-generate claim number
+        Long count = em.createNamedQuery("Claim.countAll", Long.class).getSingleResult();
+        claim.setClaimNumber("CLM-" + String.format("%03d", count + 1));
+        em.persist(claim);
         return Response.status(Response.Status.CREATED).entity(claim).build();
     }
 
     @PUT
     @Path("/{id}")
-    public Response updateClaim(@PathParam("id") String id, Claim updated) {
-        for (int i = 0; i < claims.size(); i++) {
-            if (claims.get(i).getId().equals(id)) {
-                updated.setId(id);
-                claims.set(i, updated);
-                return Response.ok(updated).build();
-            }
+    @Transactional
+    public Response updateClaim(@PathParam("id") Long id, Claim updated) {
+        Claim existing = em.find(Claim.class, id);
+        if (existing == null) {
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity("{\"error\": \"Claim not found\"}")
+                    .build();
         }
-        return Response.status(Response.Status.NOT_FOUND)
-                .entity("{\"error\": \"Claim not found\"}")
-                .build();
+        existing.setClaimant(updated.getClaimant());
+        existing.setType(updated.getType());
+        existing.setStatus(updated.getStatus());
+        existing.setAmount(updated.getAmount());
+        existing.setDateSubmitted(updated.getDateSubmitted());
+        existing.setDescription(updated.getDescription());
+        em.merge(existing);
+        return Response.ok(existing).build();
     }
 
     @DELETE
     @Path("/{id}")
-    public Response deleteClaim(@PathParam("id") String id) {
-        boolean removed = claims.removeIf(c -> c.getId().equals(id));
-        if (removed) {
-            return Response.noContent().build();
+    @Transactional
+    public Response deleteClaim(@PathParam("id") Long id) {
+        Claim claim = em.find(Claim.class, id);
+        if (claim == null) {
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity("{\"error\": \"Claim not found\"}")
+                    .build();
         }
-        return Response.status(Response.Status.NOT_FOUND)
-                .entity("{\"error\": \"Claim not found\"}")
-                .build();
+        em.remove(claim);
+        return Response.noContent().build();
     }
 }
